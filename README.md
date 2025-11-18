@@ -75,8 +75,9 @@ As seções 5.1, 5.2 e 5.3 apresentarão de que maneira as etapas foram realizad
 | :---: | :---: |
 | 5.1 | 1 |
 | 5.2 | 2 |
-| 5.3 | 3, 4 e 5 |
-| 5.4 | 6 |
+| 5.3 | 3 |
+| 5.4 | 4 |
+| 5.5 | 5 |
 
 ### 5.1 Calcular o pitch angle de um K escolhido
 O artigo [1] descreve a primeira etapa de calculo da seguinte forma: "Para a Etapa 1, para calcular o segundo invariante adiabático, K, como uma função do ângulo de pitch e do tempo, é comum utilizar a International Radiation Belt Environment Modeling Library (IRBEM-LIB [2004-2012]) e a Equação 1. Essa relação é mostrada esquematicamente na Figura 2a."
@@ -256,6 +257,29 @@ O fluxo da função garante que o campo magnético IGRF seja avaliado com precis
 - Conversão Necessária: Converte a posição Cartesiana $(\text{X, Y, Z})$ em coordenadas Esféricas Geocêntricas (CEG) $(r, \text{lat}, \text{lng})$ para que o modelo def_b_igrf possa calcular o campo.
 - Cálculo de Campo: Chama a função auxiliar def_b_igrf com as coordenadas CEG para obter o vetor de campo $\mathbf{B}(s)$.
 - Validação: Calcula a magnitude $\mathbf{B}_{\text{magnitude}}$ e retorna o valor de $\sqrt{\mathbf{B}_{\text{mirror}} - \mathbf{B}(\mathbf{s})}$. A função garante que o integrando retorne $0.0$ se o campo local for maior que $\mathbf{B}_{\text{mirror}}$ (evitando erros de raiz quadrada).
+
+### 5.2 Calcular a energia para o $\mu$ e $K$ escolhidos
+A segunda etapa da metodologia para calcular o Phase-Space Density (PSD) é focada na determinação da energia da partícula relativística usando o primeiro e o segundo invariantes adiabáticos ($\mu$ e $K$). De acordo com o artigo [1]: "A Etapa 2 envolve o cálculo da energia para os $\mu$ e $K$ escolhidos (figura 2b) usando a Equação 2. Essa relação é mostrada esquematicamente na figura 2b.
+
+$$
+\mu = \frac{(E^2 + 2m_0c^2E)\sin^2 \alpha_K}{2m_0 B c^2}
+$$
+
+Se estiver utilizando medições de uma sonda espacial com um magnetômetro a bordo, o campo magnético medido pode ser usado no cálculo de $\mu$; caso contrário, é necessário implementar o modelo de campo magnético. Como $\mu$ é dependente do pitch angle, utiliza-se o pitch angle do $K$ escolhido, $\alpha_K$.O cálculo de $\mu$ em pequenos intervalos de energia anula a complicação de resolver a Equação 2 para $E$. É, portanto, possível interpolar entre esses valores de $\mu$ calculados, obtendo a energia correspondente ao valor de $\mu$ escolhido, $E_{\mu}$, em um único instante de tempo (veja a figura 2b). As unidades típicas para $\mu$ são $\text{MeV/G}$, e deve-se tomar cuidado para evitar confusão entre unidades de energia ($\mathbf{m_0 c^2}$ está em Joules, enquanto as unidades para $\mathbf{E}$ provavelmente estarão em $\text{eV}$, $\text{keV}$ ou $\text{MeV}$)."
+
+### 5.3 Calcular os fluxos (para cada canal de energia) para o $K$ escolhido
+
+A terceira etapa da metodologia de conversão do fluxo de elétrons em Phase-Space Density (PSD) se concentra em ajustar os dados de fluxo observados para obter a distribuição completa do pitch angle em cada canal de energia. De acordo com o artigo [1]: "A Etapa 3, o cálculo do fluxo (para cada canal de energia) no $\mathbf{K}$ escolhido, exige a realização de um ajuste (fit) dos ângulos de pitch ao fluxo de elétrons medido, $j$ (veja a figura 2c). Isso é exigido em cada um dos canais de energia disponíveis do instrumento.Existem vários métodos disponíveis para calcular as distribuições completas do pitch angle, como o ajuste de somas de potências de funções trigonométricas (e.g., Green e Kivelson 2004) ou a inversão de uma distribuição precisa do pitch angle usando estimação ótima (e.g., Selesnick e Blake 2000, Hartley et al. 2013).Após obter a distribuição completa do pitch angle, é possível determinar o fluxo no pitch angle $\alpha_K$, para cada canal de energia. Isso, por sua vez, gera um conjunto de valores de fluxo em $K$ constante, variando na energia."
+
+### 5.4 Calcular o fluxo para o $\mu$ e $K$ escolhidos
+Na quarta etapa da metodologia ajusta-se os dados de fluxo obtidos na Etapa 3 em função da energia para, em seguida, determinar o fluxo final para os invariantes $\mu$ e $K$ escolhidos. De acordo com o artigo [1]: "Após a etapa 3, é agora possível produzir um ajuste (fit) desses valores de fluxo do $K$ escolhido em função da energia, usando uma equação da forma $j = a e^{bE}$, onde $j$ é o fluxo de elétrons, $E$ é a energia, e $a$ e $b$ são os coeficientes do ajuste.Tendo obtido a energia do $\mu$ fixo ($E_{\mu}$) [na Etapa 2], ela pode ser substituída na equação de ajuste, usando os coeficientes $a$ e $b$ calculados, para obter o fluxo nos valores escolhidos de $\mu$ e $K$ ($j(E_{\mu}, \alpha_K)$, veja a figura 2d)."
+
+### 5.5 Converter esse fluxo para PSD para o $\mu$ e $K$ escolhidos
+A Etapa 5 da metodologia trata a conversão final do fluxo de elétrons ($j$) para PSD, ($f$). De acordo com o artigo [1]: "Na etapa 5, usando a Equação 3, o valor de fluxo obtido para os valores selecionados de $\mu$ e $K$ ($j(E_{\mu}, \alpha_K)$) é convertido para PSD, $f$.
+$$
+\frac{j(\mu, K, x, t) \times c^2}{(E^2 + 2m_{0} c^2 E)} = f(\mu, K, x, t) 
+$$
+A energia, $E$, a ser usada nesta equação é aquela do $\mu$ fixo, $E_{\mu}$. Novamente, o usuário precisa estar ciente das diferentes unidades de energia. O PSD calculado já foi determinado nos valores escolhidos de $K$ e $\mu$."
 
 ---
 ## 6. Referências 
